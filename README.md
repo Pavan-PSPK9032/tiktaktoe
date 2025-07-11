@@ -19,7 +19,7 @@ A classic **Tic Tac Toe** game built with **HTML**, **CSS**, and **JavaScript**.
 
 ## 🌐 Live Demo
 
-👉 [Play Online](https://your-username.github.io/tictactoe/)
+👉 [Play Online](https://pavan-pspk9032.github.io/tiktaktoe/)
 
 
 
