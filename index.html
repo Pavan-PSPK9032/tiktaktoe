@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe with Levels</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #8a2be2; /* Violet background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            color: #ffffff; /* White text color */
+        }
+        h1 {
+            color: #ffffff;
+        }
+        .level-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .level-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 5px;
+            background-color: #9370db; /* Light violet */
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .level-button:hover {
+            background-color: #7a42f4; /* Darker violet on hover */
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            background-color: #4b0082; /* Indigo */
+            padding: 10px;
+            border-radius: 10px;
+            width: 90vw;
+            max-width: 400px;
+            visibility: hidden;
+        }
+        .cell {
+            width: 100%;
+            aspect-ratio: 1;
+            font-size: 5vw;
+            cursor: pointer;
+            background-color: #dda0dd; /* Plum color for cells */
+            border: none;
+            color: #4b0082; /* Indigo for text */
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+        .cell:hover {
+            background-color: #b19cd9; /* Lavender color on hover */
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #ffdab9; /* Peach color */
+            text-align: center;
+            visibility: hidden;
+            position: absolute;
+            top: 50%; /* Center vertically */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
+            border-radius: 10px;
+            padding: 20px;
+            z-index: 10; /* Ensure it's above other elements */
+        }
+        .restart-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            background-color: #9370db;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            visibility: hidden;
+            transition: background-color 0.3s ease;
+        }
+        .restart-button:hover {
+            background-color: #7a42f4;
+        }
+        .music-controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <div class="level-section">
+        <h2>Choose Difficulty Level</h2>
+        <button class="level-button" onclick="startGame('easy')">Easy</button>
+        <button class="level-button" onclick="startGame('medium')">Medium</button>
+        <button class="level-button" onclick="startGame('hard')">Hard</button>
+    </div>
+    <div class="board" id="board">
+        <button class="cell" onclick="makeMove(this, 0)"></button>
+        <button class="cell" onclick="makeMove(this, 1)"></button>
+        <button class="cell" onclick="makeMove(this, 2)"></button>
+        <button class="cell" onclick="makeMove(this, 3)"></button>
+        <button class="cell" onclick="makeMove(this, 4)"></button>
+        <button class="cell" onclick="makeMove(this, 5)"></button>
+        <button class="cell" onclick="makeMove(this, 6)"></button>
+        <button class="cell" onclick="makeMove(this, 7)"></button>
+        <button class="cell" onclick="makeMove(this, 8)"></button>
+    </div>
+    <div id="status"></div>
+    <button class="restart-button" onclick="resetGame()">Restart Game</button>
+
+    <!-- Sound Effects -->
+    <audio id="moveX" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
+    <audio id="moveOSound" src="https://www.soundjay.com/button/sounds/button-17.mp3" preload="auto"></audio>
+    <audio id="win" src="https://www.soundjay.com/button/sounds/button-18.mp3" preload="auto"></audio>
+    <audio id="draw" src="https://www.soundjay.com/button/sounds/button-19.mp3" preload="auto"></audio>
+
+    <!-- Background Music -->
+    <audio id="backgroundMusic" src="https://www.bensound.com/bensound-music/bensound-dreams.mp3" preload="auto" loop></audio>
+    <div class="music-controls">
+        <button onclick="toggleMusic()">Play/Pause Music</button>
+    </div>
+
+    <script>
+        let currentPlayer = "X"; // User plays as "X"
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let gameEnded = false;
+        let difficultyLevel = null;
+        const winConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        // Add references to the audio elements
+        const moveXSound = document.getElementById("moveX");
+        const moveOSound = document.getElementById("moveOSound");
+        const winSound = document.getElementById("win");
+        const drawSound = document.getElementById("draw");
+        const backgroundMusic = document.getElementById("backgroundMusic");
+
+        function startGame(level) {
+            difficultyLevel = level;
+            document.getElementById("board").style.visibility = "visible";
+            document.getElementById("status").style.visibility = "hidden"; // Initially hide status
+            document.querySelector(".restart-button").style.visibility = "visible";
+            resetGame();
+            backgroundMusic.play(); // Start playing background music
+        }
+
+        function makeMove(cell, index) {
+            if (board[index] === "" && !gameEnded) {
+                board[index] = currentPlayer;
+                cell.textContent = currentPlayer;
+                if (currentPlayer === "X") {
+                    moveXSound.play(); // Play sound for X's move
+                } else {
+                    moveOSound.play(); // Play sound for O's move
+                }
+                if (checkWinner()) {
+                    endGame(`Player ${currentPlayer} wins!`);
+                } else if (board.every(cell => cell !== "")) {
+                    endGame("It's a draw!");
+                } else {
+                    currentPlayer = "O"; // Switch to computer's turn
+                    setTimeout(computerMove, 1000); // Delay for computer move
+                }
+            }
+        }
+
+        function computerMove() {
+            let index;
+            if (difficultyLevel === "easy") {
+                index = randomMove();
+            } else if (difficultyLevel === "medium") {
+                index = blockingMove() || randomMove();
+            } else if (difficultyLevel === "hard") {
+                index = minimax(board, "O").index;
+            }
+
+            board[index] = "O";
+            document.querySelectorAll(".cell")[index].textContent = "O";
+            moveOSound.play(); // Play sound for O's move
+            if (checkWinner()) {
+                endGame("Computer (O) wins!");
+            } else if (board.every(cell => cell !== "")) {
+                endGame("It's a draw!");
+            } else {
+                currentPlayer = "X"; // Switch back to user
+                document.getElementById("status").style.visibility = "hidden"; // Hide status
+            }
+        }
+
+        function endGame(message) {
+            gameEnded = true;
+            const statusDiv = document.getElementById("status");
+            statusDiv.textContent = message;
+            statusDiv.style.visibility = "visible"; // Make sure status is visible
+            if (message.includes("wins")) {
+                winSound.play(); // Play win sound
+            } else if (message === "It's a draw!") {
+                drawSound.play(); // Play draw sound
+            }
+        }
+
+        function resetGame() {
+            board = ["", "", "", "", "", "", "", "", ""];
+            gameEnded = false;
+            currentPlayer = "X"; // Reset to user as starting player
+            const cells = document.querySelectorAll(".cell");
+            cells.forEach(cell => cell.textContent = "");
+            document.getElementById("status").style.visibility = "hidden"; // Hide status
+        }
+
+        function randomMove() {
+            const emptyCells = board.map((cell, index) => cell === "" ? index : null).filter(index => index !== null);
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        function blockingMove() {
+            for (let condition of winConditions) {
+                const [a, b, c] = condition;
+                if (board[a] === "O" && board[b] === "O" && board[c] === "") return c;
+                if (board[a] === "O" && board[c] === "O" && board[b] === "") return b;
+                if (board[b] === "O" && board[c] === "O" && board[a] === "") return a;
+            }
+            return null; // No blocking move available
+        }
+
+        function minimax(board, player) {
+            const availableCells = board.map((cell, index) => (cell === "" ? index : null)).filter(index => index !== null);
+            if (checkWinner() === "X") return { score: -10 };
+            if (checkWinner() === "O") return { score: 10 };
+            if (availableCells.length === 0) return { score: 0 };
+
+            const moves = [];
+            for (let index of availableCells) {
+                board[index] = player;
+                const result = minimax(board, player === "O" ? "X" : "O");
+                moves.push({ index: index, score: result.score });
+                board[index] = ""; // Reset cell
+            }
+
+            return player === "O" ? moves.reduce((best, move) => (move.score > best.score ? move : best), { score: -Infinity }) :
+                                    moves.reduce((best, move) => (move.score < best.score ? move : best), { score: Infinity });
+        }
+
+        function checkWinner() {
+            for (let condition of winConditions) {
+                const [a, b, c] = condition;
+                if (board[a] === board[b] && board[b] === board[c] && board[a] !== "") {
+                    return board[a]; // Return "X" or "O"
+                }
+            }
+            return null; // No winner yet
+        }
+
+        function toggleMusic() {
+            if (backgroundMusic.paused) {
+                backgroundMusic.play();
+            } else {
+                backgroundMusic.pause();
+            }
+        }
+    </script>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4985528436032298"
+     crossorigin="anonymous"></script>
+</body>
+</html>
